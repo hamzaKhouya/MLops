@@ -47,4 +47,4 @@ jobs:
         run: aws eks update-kubeconfig --name ids-prod --region eu-west-3
 
       - name: Deploy DeepLog to Amazon EKS
-        run:  kubectl /CICD/deploy
+        run:  kubectl apply -f /CICD/deploy
