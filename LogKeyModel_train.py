@@ -48,8 +48,8 @@ if __name__ == '__main__':
 
     # Hyperparameters
     num_classes = 28
-    num_epochs = 300
-    batch_size = 2048
+    num_epochs = 10
+    batch_size = 256
     input_size = 1
     model_dir = 'model'
     log = 'Adam_batch_size={}_epoch={}'.format(str(batch_size), str(num_epochs))
