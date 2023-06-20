@@ -15,7 +15,7 @@ def generate(name):
     # you should use the 'list' not 'set' to obtain the full dataset, I use 'set' just for test and acceleration.
     hdfs = set()
     # hdfs = []
-    with open('data/' + name, 'r') as f:
+    with open(os.path.join('C:\\Users\\Chaimae\\Desktop\\MLops\\data', name), 'r') as f:
         for ln in f.readlines():
             ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
             ln = ln + [-1] * (window_size + 1 - len(ln))
