@@ -14,6 +14,9 @@ spec:
     spec:
       containers:
         - name: model
-          image: model:latest
+          image: hamzakhouya10/deeplog_app:v2
           ports:
             - containerPort: 8050
+      imagePullSecrets:
+          - name:  regcred    
+         
