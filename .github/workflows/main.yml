@@ -50,7 +50,7 @@ jobs:
         
       - name: Test service URLs
         run: |
-             miniukbe status
+             minikube status
              kubectl get pods 
              minikube service list
              minikube service model --url
