@@ -1,7 +1,10 @@
-name: Deploy ML Model to EKS
+name: Deploy ML Model to Minikube
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -34,15 +37,14 @@ jobs:
           context: ./
           file: ./CICD/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v1
           
-       - name: Set up Minikube
+      - name: Deploy to minikube
+        run: kubectl apply -f /CICD/deploy  
+
+      - name: Test service URLs
         run: |
-          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube
-
-      - name: Start Minikube cluster
-        run: minikube start
-
-      - name: Deploy DeepLog to Amazon EKS
-        run:  kubectl apply -f /CICD/deploy  
+             minikube service list
+             minikube service example --url
+             echo "------------------opening the service------------------"
+             curl $(minikube service example --url)  
