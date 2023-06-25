@@ -45,7 +45,7 @@ jobs:
         run: kubectl get pods -A
 
       - name: Deploy to minikube
-        run: kubectl apply -f /CICD/deploy  
+        run: kubectl apply -f CICD/deploy  
 
       - name: Test service URLs
         run: |
