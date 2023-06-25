@@ -6,15 +6,11 @@ WORKDIR /app
 
 # Copy only the necessary files
 COPY requirements.txt /app
-COPY model/ model/
-COPY app.py /app
-COPY CICD/ CICD/
+COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set environment variables (if required)
-ENV ENV_VARIABLE_NAME=example_value
 
 # Remove unnecessary packages and clean the cache
 RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
@@ -22,4 +18,4 @@ RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
     && rm -rf /var/lib/apt/lists/*
 
 # Run the script
-CMD ["python", "app.py"]
+CMD ["python", "TestAff.py"]
