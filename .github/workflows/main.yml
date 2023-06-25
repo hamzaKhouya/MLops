@@ -41,12 +41,13 @@ jobs:
       
       - name: Start minikube
         uses: medyagh/setup-minikube@master
-      - name: Try the cluster !
-        run: kubectl get pods -A
 
       - name: Deploy to minikube
         run: kubectl apply -f CICD/deploy  
 
+      - name: Try the cluster !
+        run: kubectl get pods -A
+        
       - name: Test service URLs
         run: |
              minukbe status
