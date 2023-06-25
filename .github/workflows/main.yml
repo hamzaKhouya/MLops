@@ -37,8 +37,13 @@ jobs:
           context: ./
           file: ./CICD/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v1
-          
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v2
+      
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+      - name: Try the cluster !
+        run: kubectl get pods -A
+
       - name: Deploy to minikube
         run: kubectl apply -f /CICD/deploy  
 
