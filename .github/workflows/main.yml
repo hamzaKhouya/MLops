@@ -37,4 +37,22 @@ jobs:
           context: ./
           file: ./CICD/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v1
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v2
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Deploy to minikube
+        run: kubectl apply -f CICD/deploy  
+
+      - name: Try the cluster !
+        run: kubectl get pods -A
+        
+      - name: Test service URLs
+        run: |
+             minikube status
+             kubectl get pods 
+             minikube service list
+             minikube service model --url
+             echo "------------------opening the service------------------"
+             curl $(minikube service model --url)      
