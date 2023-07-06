@@ -18,4 +18,4 @@ RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
     && rm -rf /var/lib/apt/lists/*
 
 # Run the script
-CMD ["python", "app.py", "--host:0.0.0.0"]
+CMD ["python", "app.py"]
