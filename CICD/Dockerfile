@@ -5,7 +5,7 @@ FROM python:3.9-slim-buster
 WORKDIR /app
 
 # Copy only the necessary files
-COPY requirements.txt /app
+COPY requirements.txt requirements.txt
 COPY . .
 
 # Install dependencies
@@ -18,4 +18,4 @@ RUN apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
     && rm -rf /var/lib/apt/lists/*
 
 # Run the script
-CMD ["python", "visual.py"]
+CMD ["python", "app.py"]

@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: model
 spec:
+  type: LoadBalancer
   selector:
     app: model
-  type: NodePort
   ports:
     - protocol: TCP
       port: 8050
       targetPort: 8050
-      nodePort: 30000
+      #nodePort: 32000
