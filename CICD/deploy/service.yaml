@@ -5,8 +5,9 @@ metadata:
 spec:
   selector:
     app: model
+  type: NodePort
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 9090
-  type: NodePort
+      port: 8050
+      targetPort: 8050
+      nodePort: 30000
