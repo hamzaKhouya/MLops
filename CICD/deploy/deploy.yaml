@@ -14,9 +14,9 @@ spec:
     spec:
       containers:
         - name: model
-          image: hamzakhouya10/deeplog:v4
+          image: hamzakhouya10/deeplog:v5
           ports:
-            - containerPort: 8050
+            - containerPort: 9090
       imagePullSecrets:
           - name:  regcred    
          

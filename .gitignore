@@ -3,3 +3,8 @@ __pycache__/LogKeyModel_train.cpython-310.pyc
 .spyproject/config/backups/encoding.ini.bak
 .spyproject/config/backups/vcs.ini.bak
 .spyproject/config/backups/workspace.ini.bak
+.spyproject/config/backups/workspace.ini.bak
+__pycache__/app.cpython-310.pyc
+.gitignore
+.spyproject/config/backups/workspace.ini.bak
+__pycache__/

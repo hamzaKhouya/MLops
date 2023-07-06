@@ -37,7 +37,7 @@ jobs:
           context: ./
           file: ./CICD/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v4
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog:v5
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
@@ -54,5 +54,6 @@ jobs:
              kubectl get pods 
              minikube service list
              minikube service model --url
+             kubectl wait --for=condition=available --timeout=500s deployment/model
              echo "------------------opening the service------------------"
              curl $(minikube service model --url)      
