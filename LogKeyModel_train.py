@@ -15,7 +15,7 @@ def generate(name):
     num_sessions = 0
     inputs = []
     outputs = []
-    with open(os.path.join('C:\\Users\\Chaimae\\Desktop\\MLops\\data', name), 'r') as f:
+    with open(os.path.join(os.path.abspath('data/'+name)), 'r') as f:
         for line in f.readlines():
             num_sessions += 1
             line = tuple(map(lambda n: n - 1, map(int, line.strip().split())))

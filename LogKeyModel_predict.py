@@ -16,7 +16,7 @@ def generate(name):
     # you should use the 'list' not 'set' to obtain the full dataset, I use 'set' just for test and acceleration.
     hdfs = set()
     # hdfs = []
-    with open(os.path.join('data', name), 'r') as f:
+    with open(os.path.join(os.path.abspath('data/'+name)), 'r') as f:
         for ln in f.readlines():
             ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
             ln = ln + [-1] * (window_size + 1 - len(ln))
@@ -42,153 +42,65 @@ class Model(nn.Module):
         return out
 
 
-if __name__ == '__main__':
+# Hyperparameters
+num_classes = 28
+input_size = 1
+num_epochs = 5
+batch_size = 256
+model_path = os.path.join(os.path.abspath('model/Adam_batch_size={}_epoch={}.pt'.format(str(batch_size), str(num_epochs))))
+parser = argparse.ArgumentParser()
+parser.add_argument('-num_layers', default=2, type=int)
+parser.add_argument('-hidden_size', default=64, type=int)
+parser.add_argument('-window_size', default=10, type=int)
+parser.add_argument('-num_candidates', default=9, type=int)
+args = parser.parse_args()
+num_layers = args.num_layers
+hidden_size = args.hidden_size
+window_size = args.window_size
+num_candidates = args.num_candidates
 
-    # Hyperparameters
-    num_classes = 28
-    input_size = 1
-    model_path = os.path.join('C:\\Users\\Chaimae\\Desktop\\MLops\\model','Adam_batch_size=256_epoch=5.pt')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-num_layers', default=2, type=int)
-    parser.add_argument('-hidden_size', default=64, type=int)
-    parser.add_argument('-window_size', default=10, type=int)
-    parser.add_argument('-num_candidates', default=9, type=int)
-    args = parser.parse_args()
-    num_layers = args.num_layers
-    hidden_size = args.hidden_size
-    window_size = args.window_size
-    num_candidates = args.num_candidates
+model = Model(input_size, hidden_size, num_layers, num_classes).to(device)
+model.load_state_dict(torch.load(model_path))
+model.eval()
+print('model_path: {}'.format(model_path))
+test_normal_loader = generate('hdfs_test_normal')
+test_abnormal_loader = generate('hdfs_test_abnormal')
+TP = 0
+FP = 0
+# Test the model
+start_time = time.time()
+with torch.no_grad():
+    for line in test_normal_loader:
+        for i in range(len(line) - window_size):
+            seq = line[i:i + window_size]
+            label = line[i + window_size]
+            seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
+            label = torch.tensor(label).view(-1).to(device)
+            output = model(seq)
+            predicted = torch.argsort(output, 1)[0][-num_candidates:]
+            if label not in predicted:
+                FP += 1
+                break
 
-    model = Model(input_size, hidden_size, num_layers, num_classes).to(device)
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
-    print('model_path: {}'.format(model_path))
-    test_normal_loader = generate('hdfs_test_normal')
-    test_abnormal_loader = generate('hdfs_test_abnormal')
-    TP = 0
-    FP = 0
-    # Test the model
-    start_time = time.time()
-    with torch.no_grad():
-        for line in test_normal_loader:
-            for i in range(len(line) - window_size):
-                seq = line[i:i + window_size]
-                label = line[i + window_size]
-                seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
-                label = torch.tensor(label).view(-1).to(device)
-                output = model(seq)
-                predicted = torch.argsort(output, 1)[0][-num_candidates:]
-                if label not in predicted:
-                    FP += 1
-                    break
-    with torch.no_grad():
-        for line in test_abnormal_loader:
-            for i in range(len(line) - window_size):
-                seq = line[i:i + window_size]
-                label = line[i + window_size]
-                seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
-                label = torch.tensor(label).view(-1).to(device)
-                output = model(seq)
-                predicted = torch.argsort(output, 1)[0][-num_candidates:]
-                if label not in predicted:
-                    TP += 1
-                    break
-    elapsed_time = time.time() - start_time
-    print('elapsed_time: {:.3f}s'.format(elapsed_time))
-    # Compute precision, recall and F1-measure
-    FN = len(test_abnormal_loader) - TP
-    P = 100 * TP / (TP + FP)
-    R = 100 * TP / (TP + FN)
-    F1 = 2 * P * R / (P + R)
-    print('false positive (FP): {}, false negative (FN): {}, Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'.format(FP, FN, P, R, F1))
-    print('Finished Predicting')
-    
-    # Data for bar chart
-    PCA = (0.98, 0.67, 0.79)
-    LSTM = (0.9526, 0.9903, 0.9711)
-    x = [8, 9, 10, 11]
-    FP = [605, 588, 495, 860]
-    FN = [465, 333, 108, 237]
-    TP = [4123 - fn for fn in FN]
-    P = [tp / (tp + fp) for tp, fp in zip(TP, FP)]
-    R = [tp / (tp + fn) for tp, fn in zip(TP, FN)]
-    F1 = [2 * p * r / (p + r) for p, r in zip(P, R)]
-    
-    # Create bar chart trace
-    trace1 = go.Bar(
-        x=['Precision', 'Recall', 'F1-score'],
-        y=PCA,
-        name='PCA',
-        marker=dict(color='blue', opacity=0.4)
-    )
-
-    trace2 = go.Bar(
-        x=['Precision', 'Recall', 'F1-score'],
-        y=LSTM,
-        name='LSTM',
-        marker=dict(color='red', opacity=0.4)
-    )
-
-    # Create line chart trace
-    trace3 = go.Scatter(
-        x=x,
-        y=P,
-        mode='lines',
-        name='Precision',
-        line=dict(color='red', dash='dot')
-    )
-
-    trace4 = go.Scatter(
-        x=x,
-        y=R,
-        mode='lines',
-        name='Recall',
-        line=dict(color='blue', dash='dot')
-    )
-
-    trace5 = go.Scatter(
-        x=x,
-        y=F1,
-        mode='lines',
-        name='F1-score',
-        line=dict(color='black', dash='dot')
-    )
-
-    # Create Dash app and layout
-    app = dash.Dash(__name__)
-    app.layout = html.Div(children=[
-        html.H1(children='Scores by different models'),
-        html.Div(children=[
-            dcc.Graph(
-                id='bar-chart',
-                figure={
-                    'data': [trace1, trace2],
-                    'layout': go.Layout(
-                        title='Scores by different models',
-                        xaxis=dict(title='Measure'),
-                        yaxis=dict(title='Scores'),
-                        barmode='group'
-                    )
-                }
-            )
-        ]),
-        html.Div(children=[
-            dcc.Graph(
-                id='line-chart',
-                figure={
-                    'data': [trace3, trace4, trace5],
-                    'layout': go.Layout(
-                        title='Scores by window size',
-                        xaxis=dict(title='window_size'),
-                        yaxis=dict(title='scores'),
-                        legend=dict(
-                            x=0.7,
-                            y=1
-                        ),
-                        xaxis_tickvals=x,
-                        yaxis_range=[0.5, 1]
-                    )
-                }
-            )
-        ])
-    ])
+with torch.no_grad():
+    for line in test_abnormal_loader:
+        for i in range(len(line) - window_size):
+            seq = line[i:i + window_size]
+            label = line[i + window_size]
+            seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
+            label = torch.tensor(label).view(-1).to(device)
+            output = model(seq)
+            predicted = torch.argsort(output, 1)[0][-num_candidates:]
+            if label not in predicted:
+                TP += 1
+                break
+                
+elapsed_time = time.time() - start_time
+print('elapsed_time: {:.3f}s'.format(elapsed_time))
+# Compute precision, recall and F1-measure
+FN = len(test_abnormal_loader) - TP
+P = 100 * TP / (TP + FP)
+R = 100 * TP / (TP + FN)
+F1 = 2 * P * R / (P + R)
+print('false positive (FP): {}, false negative (FN): {}, Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'.format(FP, FN, P, R, F1))
+print('Finished Predicting')
