@@ -37,7 +37,7 @@ jobs:
           context: ./
           file: ./CICD/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_test:v5
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_test:v7
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
