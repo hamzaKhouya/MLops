@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: model
-          image: hamzakhouya10/deeplog_test:v8
+          image: hamzakhouya10/deeplog_test:visual
           ports:
             - containerPort: 8050
       imagePullSecrets:
