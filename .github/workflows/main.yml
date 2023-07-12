@@ -48,6 +48,7 @@ jobs:
       - name: Test service URLs
         run: |
              minikube status
+             kubectl describe deployments.apps model
              kubectl get svc 
              minikube service list
              minikube service model --url    
