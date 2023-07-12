@@ -1,3 +1,4 @@
 torch==1.7.1
 tensorboard==2.0.2
 dash-bootstrap-components==1.4.1
+pandas==2.0.2
