@@ -73,5 +73,5 @@ def update_graph(selected_metric):
                             
     return precision, recall, f1_score
     
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
