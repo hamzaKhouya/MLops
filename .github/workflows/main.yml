@@ -35,20 +35,20 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./
-          file: ./CICD/Dockerfile
+          file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_model:1.0.1
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_model:1.0.3
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
 
       - name: Deploy to minikube
-        run: kubectl apply -f CICD/deploy  
+        run: kubectl apply -f deployments.yaml 
         
       - name: Test service URLs
         run: |
              minikube status
              kubectl describe deployments.apps model
-             kubectl get svc 
              minikube service list
              minikube service model --url    
+             kubectl get pod --watch 
