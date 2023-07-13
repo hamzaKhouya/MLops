@@ -37,13 +37,25 @@ jobs:
           context: ./
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_model:1.0.3
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/deeplog_model:1.0.4
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
 
       - name: Deploy to minikube
-        run: kubectl apply -f deployments.yaml 
+        run: |
+              echo "
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: docker-hub
+                annotations:
+                  docker-username: ${{ secrets.DOCKER_HUB_USERNAME }}
+                  docker-password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+                  docker-server: https://index.docker.io/v1/
+              type: Opaque
+              " | kubectl apply -f - 
+              kubectl apply -f deployments.yaml 
         
       - name: Test service URLs
         run: |

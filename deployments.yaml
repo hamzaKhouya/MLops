@@ -14,20 +14,12 @@ spec:
     spec:
       containers:
         - name: model
-          image: hamzakhouya10/deeplog_model:1.0.3
+          image: hamzakhouya10/deeplog_model:1.0.4
           ports:
             - containerPort: 8050
       imagePullSecrets:
-          - name:  regcred    
+          - name:  docker-hub
          
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: regcred
-data:
-  .dockerconfigjson: YUdGdGVtRnJhRzkxZVdFeE1EcElaWEp0WVc1dlFERXc=
-type: kubernetes.io/dockerconfigjson
 ---
 apiVersion: v1
 kind: Service
