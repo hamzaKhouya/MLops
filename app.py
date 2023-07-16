@@ -3,9 +3,11 @@ import torch.nn as nn
 import time
 import argparse
 import dash
-from dash import dcc, html
-import plotly.graph_objs as go
+from dash import dcc, html, Input, Output
+import dash_bootstrap_components as dbc
+import plotly.express as px
 import os
+import pandas as pd
 
 # Device configuration
 device = torch.device("cpu")
@@ -13,7 +15,7 @@ device = torch.device("cpu")
 
 def generate(name):
     hdfs = set()
-    with open(os.path.join(os.path.abspath('data/'+name)), 'r') as f:
+    with open(os.path.join(os.path.abspath('data/' + name)), 'r') as f:
         for ln in f.readlines():
             ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
             ln = ln + [-1] * (window_size + 1 - len(ln))
@@ -61,69 +63,150 @@ model.eval()
 print('model_path: {}'.format(model_path))
 test_normal_loader = generate('hdfs_test_normal')
 test_abnormal_loader = generate('hdfs_test_abnormal')
-TP = 0
-FP = 0
+
+TP_list = []
+FP_list = []
+FN_list = []
+
+# Store prediction values for each Iteration
+predictions_normal = []
+predictions_abnormal = []
+
 # Test the model
 start_time = time.time()
 with torch.no_grad():
-    for line in test_normal_loader:
-        for i in range(len(line) - window_size):
-            seq = line[i:i + window_size]
-            label = line[i + window_size]
-            seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
-            label = torch.tensor(label).view(-1).to(device)
-            output = model(seq)
-            predicted = torch.argsort(output, 1)[0][-num_candidates:]
-            if label not in predicted:
-                FP += 1
-                break
-with torch.no_grad():
-    for line in test_abnormal_loader:
-        for i in range(len(line) - window_size):
-            seq = line[i:i + window_size]
-            label = line[i + window_size]
-            seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
-            label = torch.tensor(label).view(-1).to(device)
-            output = model(seq)
-            predicted = torch.argsort(output, 1)[0][-num_candidates:]
-            if label not in predicted:
-                TP += 1
-                break
+    for Iteration in range(num_epochs):
+        TP = 0
+        FP = 0
+
+        if Iteration == 0:
+            test_normal_loader_Iteration = list(test_normal_loader)[:window_size]
+            test_abnormal_loader_Iteration = list(test_abnormal_loader)[:window_size]
+        else:
+            test_normal_loader_Iteration = list(test_normal_loader)[:window_size + Iteration]
+            test_abnormal_loader_Iteration = list(test_abnormal_loader)[:window_size + Iteration]
+
+        for line in test_normal_loader_Iteration:
+            for i in range(len(line) - window_size):
+                seq = line[i:i + window_size]
+                label = line[i + window_size]
+                seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
+                label = torch.tensor(label).view(-1).to(device)
+                output = model(seq)
+                predicted = torch.argsort(output, 1)[0][-num_candidates:]
+                if label not in predicted:
+                    FP += 1
+                    break
+            predictions_normal.append(output.tolist())
+
+        for line in test_abnormal_loader_Iteration:
+            for i in range(len(line) - window_size):
+                seq = line[i:i + window_size]
+                label = line[i + window_size]
+                seq = torch.tensor(seq, dtype=torch.float).view(-1, window_size, input_size).to(device)
+                label = torch.tensor(label).view(-1).to(device)
+                output = model(seq)
+                predicted = torch.argsort(output, 1)[0][-num_candidates:]
+                if label not in predicted:
+                    TP += 1
+                    break
+            predictions_abnormal.append(output.tolist())
+
+        FN = len(test_abnormal_loader_Iteration) - TP
+        TP_list.append(TP)
+        FP_list.append(FP)
+        FN_list.append(FN)
+
 elapsed_time = time.time() - start_time
 print('elapsed_time: {:.3f}s'.format(elapsed_time))
-# Compute precision, recall and F1-measure
-FN = len(test_abnormal_loader) - TP
-P = 100 * TP / (TP + FP)
-R = 100 * TP / (TP + FN)
-F1 = 2 * P * R / (P + R)
 
-# Create bar chart trace
-trace1 = go.Bar(
-    x=['Precision', 'Recall', 'F1-score'],
-    y=[P/100, R/100, F1/100],
-    name='Your Model',
-    marker=dict(color='blue', opacity=0.4)
+
+LOGO = "https://cd.foundation/wp-content/uploads/sites/78/2020/05/mlopscard.png"
+navbar = dbc.Navbar(
+    dbc.Container(
+        [
+            dbc.Col(html.Img(src=LOGO, height="100px",
+                             className="float-start")),
+            dbc.Collapse(
+                [
+                    dbc.NavItem(dbc.NavLink("Differents metrics", href="/",
+                                            active="exact", className="btn btn-outline-info m-1")),
+                ],
+                id="navbar-collapse",
+                is_open=False,
+                navbar=True,
+            ),
+            dbc.Col(
+            dcc.Dropdown(
+                id="metric",
+                options=["Precision","Recall","F1-Score"],
+                multi=True,
+                placeholder="Metrics",
+                style = {'float' : 'left' , 'width' : '300px' }
+            ),
+            className="mt-1"
+        )
+        ], fluid=True
+    ),
+    className="my-1",
+    dark=True,
 )
 
-# Create Dash app and layout
-app = dash.Dash(__name__)
-app.layout = html.Div(children=[
-    html.H1(children='Scores by different models'),
-    html.Div(children=[
-        dcc.Graph(
-            id='bar-chart',
-            figure={
-                'data': [trace1],
-                'layout': go.Layout(
-                    title='Scores by different models',
-                    xaxis=dict(title='Measure'),
-                    yaxis=dict(title='Scores'),
-                    barmode='group'
-                )
-            }
-        )
-    ])
-])
+figures = dbc.Row([
+                 dbc.Col(dcc.Graph(id = 'precision'),width={'size':4 , "order": 1}, 
+                                 style = {'border-style': 'solid', 'border-color': 'gray'}),
+                 dbc.Col(dcc.Graph(id = 'recall'),width={'size': 4, "order": 2},
+                              style = {'border-style': 'solid', 'border-color': 'gray'}),
+                 dbc.Col(dcc.Graph(id = 'f1-score'),width={'size': 4, "order": 2},
+                              style = {'border-style': 'solid', 'border-color': 'gray'})
+                 ])
 
+# Create Dash app and layout
+FONT_AWESOME = "https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME])
+
+app.layout = html.Div(children=[navbar, figures])
+# Compute precision, recall, and F1-measure for each Iteration
+precision_list = [TP / (TP + FP) for TP, FP in zip(TP_list, FP_list)]
+recall_list = [TP / (TP + FN) for TP, FN in zip(TP_list, FN_list)]
+f1_score_list = [2 * P * R / (P + R) for P, R in zip(precision_list, recall_list)]
+data = {
+    'Iteration': list(range(num_epochs)),
+    'Precision': precision_list,
+    'Recall': recall_list,
+    'F1-score': f1_score_list
+}
+
+df = pd.DataFrame(data)
+new_data = df.round(2)
+
+@app.callback(
+    [Output('precision', 'figure'),
+     Output('recall', 'figure'),
+     Output('f1-score', 'figure'),
+     Input('metric' ,'value')
+     ])
+def update_graph(selected_metric):
+    
+    precision = px.line(new_data,x='Iteration',y='Precision', markers=True,
+                        title ='Precision du Modèle', text="Precision",
+                        template='ggplot2')
+    
+    precision.update_traces(textposition="bottom right")
+ 
+    recall = px.line(new_data,x='Iteration',y='Recall', markers=True,
+                     title ='Recall du Modèle', text="Recall",
+                     template='ggplot2')
+    
+    recall.update_traces(textposition="bottom right")
+    
+    f1_score = px.line(new_data,x='Iteration',y='F1-score', markers=True,
+                       title ='F1-Score du Modèle',text="F1-score",
+                       template='ggplot2')
+    
+    f1_score.update_traces(textposition="top left")
+    
+    return precision, recall, f1_score
+    
 if __name__ == '__main__':
-    app.run_server(debug=False,host='0.0.0.0')
+    app.run_server(debug=False, host='0.0.0.0')
