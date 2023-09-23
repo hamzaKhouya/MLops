@@ -8,3 +8,5 @@ __pycache__/app.cpython-310.pyc
 .gitignore
 .spyproject/config/backups/workspace.ini.bak
 __pycache__/
+.spyproject/config/workspace.ini
+.spyproject/config/backups/workspace.ini.bak
