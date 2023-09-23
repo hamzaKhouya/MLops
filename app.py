@@ -135,17 +135,7 @@ navbar = dbc.Navbar(
                 id="navbar-collapse",
                 is_open=False,
                 navbar=True,
-            ),
-            dbc.Col(
-            dcc.Dropdown(
-                id="metric",
-                options=["Precision","Recall","F1-Score"],
-                multi=True,
-                placeholder="Metrics",
-                style = {'float' : 'left' , 'width' : '300px' }
-            ),
-            className="mt-1"
-        )
+            )
         ], fluid=True
     ),
     className="my-1",
